@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../context/AuthContext'; // ✅ C'EST CETTE LIGNE QUI MANQUAIT
+import { useFocusEffect } from '@react-navigation/native'; // ✅ Ajouté
+import { useAuth } from '../context/AuthContext';
 import * as api from '../services/api';
 
 const HistoryScreen = () => {
@@ -18,33 +19,35 @@ const HistoryScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchMoodLogs = async () => {
-      if (!userToken) {
-        setIsLoading(false);
-        return;
-      }
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchMoodLogs = async () => {
+        if (!userToken) {
+          setIsLoading(false);
+          return;
+        }
 
-      try {
-        setIsLoading(true);
-        const response = await api.getMoodLogs(userToken);
-        setMoodLogs(response.data);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching mood logs:', err.response?.data || err.message);
-        setError('Erreur lors du chargement des humeurs.');
-        Alert.alert('Erreur', 'Impossible de charger l’historique.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+        try {
+          setIsLoading(true);
+          const response = await api.getMoodLogs(userToken);
+          setMoodLogs(response.data);
+          setError(null);
+        } catch (err) {
+          console.error('Error fetching mood logs:', err.response?.data || err.message);
+          setError('Erreur lors du chargement des humeurs.');
+          Alert.alert('Erreur', 'Impossible de charger l’historique.');
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
-    fetchMoodLogs();
-  }, [userToken]);
+      fetchMoodLogs();
+    }, [userToken])
+  );
 
   const formatDate = (isoDate) => {
     const d = new Date(isoDate);
-    return d.toLocaleDateString('en-US', {
+    return d.toLocaleDateString('fr-FR', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -54,9 +57,9 @@ const HistoryScreen = () => {
   const renderItem = ({ item }) => (
     <TouchableOpacity style={styles.card}>
       <Text style={styles.date}>{formatDate(item.date)}</Text>
-      <Text style={styles.mood}>Mood: {item.moodType || 'N/A'}</Text>
+      <Text style={styles.mood}>Humeur : {item.moodType || 'N/A'}</Text>
       <Text style={styles.notes} numberOfLines={1} ellipsizeMode="tail">
-        {item.notes || 'No notes'}
+        {item.notes || 'Aucune note'}
       </Text>
     </TouchableOpacity>
   );
