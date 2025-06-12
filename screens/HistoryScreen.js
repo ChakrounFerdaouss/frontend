@@ -3,21 +3,51 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   ActivityIndicator,
   Alert,
-  TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native'; // ✅ Ajouté
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import * as api from '../services/api';
+import MoodCalendar from '../components/MoodCalendar';
+
+const moodColors = {
+  Sad: '#f44336',
+  Neutral: '#ff9800',
+  Happy: '#4caf50',
+  Joyful: '#2196f3',
+};
 
 const HistoryScreen = () => {
   const { userToken } = useAuth();
   const [moodLogs, setMoodLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [markedDates, setMarkedDates] = useState({});
+  const [selectedDate, setSelectedDate] = useState(null);
+
+  // Convert to local date string: YYYY-MM-DD
+  const getLocalDateString = (isoString) => {
+    const local = new Date(isoString);
+    const year = local.getFullYear();
+    const month = String(local.getMonth() + 1).padStart(2, '0');
+    const day = String(local.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatDateTime = (isoDate) => {
+    const d = new Date(isoDate);
+    return d.toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }) + ' à ' + d.toLocaleTimeString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
   useFocusEffect(
     React.useCallback(() => {
@@ -30,8 +60,20 @@ const HistoryScreen = () => {
         try {
           setIsLoading(true);
           const response = await api.getMoodLogs(userToken);
-          setMoodLogs(response.data);
+          const logs = response.data;
+          setMoodLogs(logs);
           setError(null);
+
+          const marked = {};
+          logs.forEach((entry) => {
+            const date = getLocalDateString(entry.date);
+            marked[date] = {
+              marked: true,
+              dotColor: moodColors[entry.moodType] || '#000',
+            };
+          });
+
+          setMarkedDates(marked);
         } catch (err) {
           console.error('Error fetching mood logs:', err.response?.data || err.message);
           setError('Erreur lors du chargement des humeurs.');
@@ -45,24 +87,34 @@ const HistoryScreen = () => {
     }, [userToken])
   );
 
-  const formatDate = (isoDate) => {
-    const d = new Date(isoDate);
-    return d.toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+  const handleDayPress = (day) => {
+    const isSameDay = selectedDate === day.dateString;
+    const newSelectedDate = isSameDay ? null : day.dateString;
+    setSelectedDate(newSelectedDate);
+
+    const updatedMarked = {};
+    moodLogs.forEach((entry) => {
+      const date = getLocalDateString(entry.date);
+      updatedMarked[date] = {
+        marked: true,
+        dotColor: moodColors[entry.moodType] || '#000',
+      };
     });
+
+    if (newSelectedDate) {
+      updatedMarked[newSelectedDate] = {
+        ...(updatedMarked[newSelectedDate] || {}),
+        selected: true,
+        selectedColor: '#6C63FF',
+      };
+    }
+
+    setMarkedDates(updatedMarked);
   };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.card}>
-      <Text style={styles.date}>{formatDate(item.date)}</Text>
-      <Text style={styles.mood}>Humeur : {item.moodType || 'N/A'}</Text>
-      <Text style={styles.notes} numberOfLines={1} ellipsizeMode="tail">
-        {item.notes || 'Aucune note'}
-      </Text>
-    </TouchableOpacity>
-  );
+  const filteredLogs = selectedDate
+    ? moodLogs.filter((log) => getLocalDateString(log.date) === selectedDate)
+    : moodLogs;
 
   if (isLoading) {
     return (
@@ -81,22 +133,29 @@ const HistoryScreen = () => {
     );
   }
 
-  if (moodLogs.length === 0) {
-    return (
-      <SafeAreaView style={styles.centered}>
-        <Text style={styles.emptyText}>Aucune humeur enregistrée pour le moment.</Text>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
-      <FlatList
-        data={moodLogs}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-      />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <MoodCalendar markedDates={markedDates} onDayPress={handleDayPress} />
+
+        {filteredLogs.length === 0 ? (
+          <Text style={styles.emptyText}>
+            {selectedDate
+              ? "Aucune humeur enregistrée pour ce jour."
+              : "Aucune humeur enregistrée pour le moment."}
+          </Text>
+        ) : (
+          filteredLogs.map((item, index) => (
+            <View key={index} style={styles.card}>
+              <Text style={styles.date}>{formatDateTime(item.date)}</Text>
+              <Text style={styles.mood}>Humeur : {item.moodType || 'N/A'}</Text>
+              <Text style={styles.notes} numberOfLines={1} ellipsizeMode="tail">
+                {item.notes || 'Aucune note'}
+              </Text>
+            </View>
+          ))
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -106,7 +165,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFBEA',
   },
-  listContent: {
+  scrollContent: {
     padding: 16,
     paddingBottom: 40,
   },
@@ -150,6 +209,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#777',
     textAlign: 'center',
+    marginTop: 30,
   },
   errorText: {
     fontSize: 16,
