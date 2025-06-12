@@ -1,21 +1,18 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+// Removed createNativeStackNavigator from here as it's used inside AuthNavigator now
 
-import LoginScreen from '../screens/LoginScreen';
-import HomeScreen from '../screens/HomeScreen';
-import RegisterScreen from '../screens/RegisterScreen';
-
-const Stack = createNativeStackNavigator();
+import AuthNavigator from './AuthNavigator'; // Import the AuthNavigator you created
+import AppTabsNavigator from './AppTabsNavigator'; // Import the AppTabsNavigator you created
+import { useAuth } from '../context/AuthContext'; // Import your AuthContext hook
 
 export default function MainNavigator() {
+  const { userToken } = useAuth(); // Get the userToken from your AuthContext
+
   return (
     <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Register" component={RegisterScreen} />
-      </Stack.Navigator>
+      {/* Conditionally render navigators based on authentication status */}
+      {userToken ? <AppTabsNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );
 }
