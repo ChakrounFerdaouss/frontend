@@ -1,17 +1,24 @@
 import React from 'react';
+import { View, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-// Removed createNativeStackNavigator from here as it's used inside AuthNavigator now
-
-import AuthNavigator from './AuthNavigator'; // Import the AuthNavigator you created
-import AppTabsNavigator from './AppTabsNavigator'; // Import the AppTabsNavigator you created
-import { useAuth } from '../context/AuthContext'; // Import your AuthContext hook
+import AuthNavigator from './AuthNavigator';
+import AppTabsNavigator from './AppTabsNavigator';
+import { useAuth } from '../context/AuthContext';
 
 export default function MainNavigator() {
-  const { userToken } = useAuth(); // Get the userToken from your AuthContext
+  const { userToken, isLoading } = useAuth();
+
+  // Écran de chargement pendant la récupération du token
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Chargement...</Text>
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>
-      {/* Conditionally render navigators based on authentication status */}
       {userToken ? <AppTabsNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );

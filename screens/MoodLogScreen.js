@@ -1,4 +1,3 @@
-// src/screens/MoodLogScreen.js
 import React, { useState } from 'react';
 import {
   View,
@@ -7,10 +6,10 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
-  ScrollView
+  ScrollView,
 } from 'react-native';
-import { useAuth } from '../context/AuthContext'; // Correct path to context from screen
-import * as api from '../services/api';     // Correct path to services from screen
+import { useAuth } from '../context/AuthContext';
+import * as api from '../services/api';
 
 const MoodLogScreen = () => {
   const [selectedMood, setSelectedMood] = useState(null);
@@ -19,46 +18,37 @@ const MoodLogScreen = () => {
   const { userToken } = useAuth();
 
   const moods = [
-    { type: 'Very Sad', emoji: '😭', value: 1 },
-    { type: 'Sad', emoji: '😞', value: 2 },
-    { type: 'Neutral', emoji: '😐', value: 3 },
-    { type: 'Happy', emoji: '😊', value: 4 },
-    { type: 'Very Happy', emoji: '😄', value: 5 },
+    { type: 'Very Sad', emoji: '😢' },
+    { type: 'Sad', emoji: '😐' },
+    { type: 'Neutral', emoji: '😌' },
+    { type: 'Happy', emoji: '🙂' },
+    { type: 'Very Happy', emoji: '😁' },
   ];
+
+  const tags = ['#work', '#gratitude', '#family'];
 
   const handleSaveMood = async () => {
     if (!selectedMood) {
-      Alert.alert('Selection Missing', 'Please select a mood before saving.');
+      Alert.alert('Sélectionnez une humeur.');
       return;
     }
 
     setIsLoading(true);
     try {
-      // --- START OF CRITICAL ADDITION / CORRECTION ---
-      // Get the current date in YYYY-MM-DD format
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
-      const day = String(today.getDate()).padStart(2, '0');
-      const currentDate = `${year}-${month}-${day}`; // Format: YYYY-MM-DD
-
+      const today = new Date().toISOString().split('T')[0];
       const moodData = {
         moodType: selectedMood.type,
-        notes: notes,
-        date: currentDate, // <--- THIS IS THE ESSENTIAL LINE!
+        notes,
+        date: today,
       };
 
-      console.log('Frontend sending moodData:', moodData); // Debug log to verify
-
-      // --- END OF CRITICAL ADDITION / CORRECTION ---
-
       await api.createMoodLog(userToken, moodData);
-      Alert.alert('Success', 'Mood saved successfully!');
-      setSelectedMood(null); // Reset form
-      setNotes(''); // Reset notes
+      Alert.alert('✅ Enregistré', `Humeur : ${selectedMood.type}`);
+      setSelectedMood(null);
+      setNotes('');
     } catch (error) {
-      console.error('Failed to save mood:', error.response?.data || error.message);
-      Alert.alert('Error', error.response?.data?.message || 'Failed to save mood.');
+      Alert.alert('Erreur', 'Échec de l’enregistrement.');
+      console.error(error);
     } finally {
       setIsLoading(false);
     }
@@ -66,46 +56,43 @@ const MoodLogScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>How are you feeling?</Text>
+      <Text style={styles.title}>New Journal Entry</Text>
 
-      {/* Mood Selector */}
-      <View style={styles.moodSelectorContainer}>
+      <View style={styles.moodRow}>
         {moods.map((mood) => (
           <TouchableOpacity
             key={mood.type}
             style={[
-              styles.moodOption,
-              selectedMood?.type === mood.type && styles.selectedMoodOption,
+              styles.moodCircle,
+              selectedMood?.type === mood.type && styles.moodCircleSelected,
             ]}
             onPress={() => setSelectedMood(mood)}
-            disabled={isLoading}
           >
-            <Text style={styles.emoji}>{mood.emoji}</Text>
-            <Text style={styles.moodText}>{mood.type}</Text>
+            <Text style={styles.moodLabel}>{mood.emoji}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* Notes Input */}
-      <Text style={styles.label}>Notes (Optional)</Text>
       <TextInput
-        style={styles.notesInput}
-        placeholder="Feeling overwhelmed..."
+        placeholder="Notes (Optional)"
+        placeholderTextColor="#999"
         multiline
+        numberOfLines={4}
         value={notes}
         onChangeText={setNotes}
-        editable={!isLoading}
+        style={styles.textArea}
       />
 
-      {/* Save Button */}
-      <TouchableOpacity
-        style={styles.saveButton}
-        onPress={handleSaveMood}
-        disabled={isLoading}
-      >
-        <Text style={styles.saveButtonText}>
-          {isLoading ? 'Saving...' : 'Save Mood'}
-        </Text>
+      <View style={styles.tagContainer}>
+        {tags.map((tag) => (
+          <Text key={tag} style={styles.tag}>
+            {tag}
+          </Text>
+        ))}
+      </View>
+
+      <TouchableOpacity style={styles.saveButton} onPress={handleSaveMood} disabled={isLoading}>
+        <Text style={styles.saveButtonText}>{isLoading ? 'Saving...' : 'Save'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -114,81 +101,78 @@ const MoodLogScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fffbea',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    marginBottom: 30,
+    fontSize: 22,
+    fontWeight: '600',
+    marginBottom: 25,
     color: '#333',
   },
-  moodSelectorContainer: {
+  moodRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginBottom: 30,
+    justifyContent: 'space-between',
+    marginBottom: 25,
     width: '100%',
   },
-  moodOption: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '18%',
-    aspectRatio: 1,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    margin: 5,
+  moodCircle: {
     backgroundColor: '#fff',
-    padding: 5,
-  },
-  selectedMoodOption: {
-    borderColor: '#5A67D8',
+    borderRadius: 40,
+    padding: 15,
     borderWidth: 2,
-    backgroundColor: '#e6e8fa',
+    borderColor: '#eee',
+    width: 60,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  emoji: {
-    fontSize: 36,
-    marginBottom: 5,
+  moodCircleSelected: {
+    borderColor: '#ffcc00',
+    backgroundColor: '#fffde7',
   },
-  moodText: {
-    fontSize: 12,
-    textAlign: 'center',
-    color: '#555',
+  moodLabel: {
+    fontSize: 24,
   },
-  label: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    alignSelf: 'flex-start',
-    marginLeft: '5%',
-    marginBottom: 10,
-    marginTop: 20,
-  },
-  notesInput: {
-    width: '90%',
-    minHeight: 100,
+  textArea: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
     padding: 15,
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 8,
-    marginBottom: 30,
-    backgroundColor: '#fff',
     textAlignVertical: 'top',
     fontSize: 16,
+    width: '100%',
+    marginBottom: 20,
+  },
+  tagContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 20,
+  },
+  tag: {
+    backgroundColor: '#ffecb3',
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    fontSize: 14,
+    color: '#333',
+    margin: 5,
   },
   saveButton: {
-    backgroundColor: '#5A67D8',
-    padding: 15,
-    borderRadius: 8,
-    width: '90%',
+    backgroundColor: '#fbc02d',
+    paddingVertical: 15,
+    borderRadius: 10,
     alignItems: 'center',
+    width: '100%',
   },
   saveButtonText: {
-    color: '#fff',
-    fontSize: 18,
+    color: '#333',
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });

@@ -1,96 +1,115 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity } from 'react-native';
-import { useAuth } from '../context/AuthContext'; // Import the useAuth hook from your context
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  StyleSheet,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
+  ActivityIndicator,
+} from 'react-native';
+import { useAuth } from '../context/AuthContext'; // 👈 Assure-toi que le chemin est bon
 
 const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const { login, isLoading } = useAuth(); // <--- Get login and isLoading from useAuth
+  const { login, isLoading } = useAuth();
 
   const handleLogin = async () => {
-    // No direct navigation.navigate('Home') here.
-    // The AuthContext will set the userToken, which will trigger MainNavigator
-    // to render AppTabsNavigator (which includes Home).
-    const result = await login(username, password); // <--- Call the login function from AuthContext
+    const result = await login(username, password);
     if (!result.success) {
-      Alert.alert('Login Failed', result.message || 'Please check your credentials.');
+      Alert.alert('Échec de connexion', result.message || 'Vérifiez vos identifiants.');
     }
-    // If login is successful, AuthContext's userToken state will update,
-    // causing MainNavigator to automatically switch to the AppTabsNavigator.
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Connexion</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Nom d'utilisateur"
-        value={username}
-        onChangeText={setUsername}
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Mot de passe"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      {/* You can add a "Forgot Password?" link here if needed */}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+          <Text style={styles.title}>Connexion</Text>
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={isLoading}>
-        <Text style={styles.buttonText}>
-          {isLoading ? 'Connexion en cours...' : 'Se connecter'}
-        </Text>
-      </TouchableOpacity>
+          <TextInput
+            style={styles.input}
+            placeholder="Nom d'utilisateur"
+            placeholderTextColor="#666"
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+          />
 
-      <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-        <Text style={styles.linkText}>Pas encore de compte ? Créer un compte</Text>
-      </TouchableOpacity>
-    </View>
+          <TextInput
+            style={styles.input}
+            placeholder="Mot de passe"
+            placeholderTextColor="#666"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+
+          <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={isLoading}>
+            {isLoading ? (
+              <ActivityIndicator color="#333" />
+            ) : (
+              <Text style={styles.buttonText}>Se connecter</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <Text style={styles.registerText}>Pas encore de compte ? Créer un compte</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    backgroundColor: '#FFF9C4',
+    flexGrow: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f5f5f5',
+    padding: 25,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: '600',
     marginBottom: 30,
+    textAlign: 'center',
     color: '#333',
   },
   input: {
-    width: '90%',
-    padding: 15,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    marginBottom: 15,
     backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    marginBottom: 15,
+    borderColor: '#ccc',
+    borderWidth: 1,
   },
   button: {
-    backgroundColor: '#5A67D8',
-    padding: 15,
-    borderRadius: 8,
-    width: '90%',
+    backgroundColor: '#FBC02D',
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginBottom: 20,
     alignItems: 'center',
-    marginBottom: 10,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 18,
+    color: '#333',
     fontWeight: 'bold',
-  },
-  linkText: {
-    color: '#5A67D8',
-    marginTop: 20,
     fontSize: 16,
+  },
+  registerText: {
+    textAlign: 'center',
+    color: '#1976D2',
+    fontSize: 14,
   },
 });
 

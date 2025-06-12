@@ -1,18 +1,17 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://192.168.0.18:5000/api'; // IP de ton backend local
+const API_BASE_URL = 'http://172.20.10.2:3000/api'; // IP de ton backend local
 
-// ✅ Connexion
+// 🔐 Authentification
 export const login = async (username, password) => {
   return axios.post(`${API_BASE_URL}/auth/login`, { username, password });
 };
 
-// ✅ Création de compte
 export const register = async (username, password) => {
   return axios.post(`${API_BASE_URL}/auth/register`, { username, password });
 };
 
-// 📓 Journaux
+// 📓 Journal Entries
 export const getJournals = async (token) => {
   return axios.get(`${API_BASE_URL}/journals`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -37,7 +36,7 @@ export const deleteJournal = async (token, journalId) => {
   });
 };
 
-// 😄 Humeurs
+// 😄 Mood Logs
 export const getMoodLogs = async (token, date) => {
   return axios.get(`${API_BASE_URL}/moods`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -63,7 +62,7 @@ export const deleteMoodLog = async (token, moodId) => {
   });
 };
 
-// 👤 Profil utilisateur
+// 👤 User Profile (optionnel si implémenté côté backend)
 export const getUserProfile = async (token) => {
   return axios.get(`${API_BASE_URL}/users/profile`, {
     headers: { Authorization: `Bearer ${token}` },

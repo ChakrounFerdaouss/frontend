@@ -1,8 +1,16 @@
-// src/screens/HistoryScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert } from 'react-native';
-import { useAuth } from '../context/AuthContext'; // To get the user token
-import * as api from '../services/api'; // To call your backend API
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+  Alert,
+  TouchableOpacity,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '../context/AuthContext'; // ✅ C'EST CETTE LIGNE QUI MANQUAIT
+import * as api from '../services/api';
 
 const HistoryScreen = () => {
   const { userToken } = useAuth();
@@ -19,130 +27,131 @@ const HistoryScreen = () => {
 
       try {
         setIsLoading(true);
-        // We're calling getMoodLogs WITHOUT a specific date, month, or year.
-        // Your backend's GET /moods route should then return all moods for the user.
         const response = await api.getMoodLogs(userToken);
         setMoodLogs(response.data);
-        setError(null); // Clear any previous errors
+        setError(null);
       } catch (err) {
         console.error('Error fetching mood logs:', err.response?.data || err.message);
-        setError('Failed to fetch mood logs. ' + (err.response?.data?.message || 'Please try again.'));
-        Alert.alert('Error', 'Failed to fetch mood logs. Please try again.');
+        setError('Erreur lors du chargement des humeurs.');
+        Alert.alert('Erreur', 'Impossible de charger l’historique.');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchMoodLogs();
-  }, [userToken]); // Re-fetch if userToken changes
+  }, [userToken]);
+
+  const formatDate = (isoDate) => {
+    const d = new Date(isoDate);
+    return d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const renderItem = ({ item }) => (
+    <TouchableOpacity style={styles.card}>
+      <Text style={styles.date}>{formatDate(item.date)}</Text>
+      <Text style={styles.mood}>Mood: {item.moodType || 'N/A'}</Text>
+      <Text style={styles.notes} numberOfLines={1} ellipsizeMode="tail">
+        {item.notes || 'No notes'}
+      </Text>
+    </TouchableOpacity>
+  );
 
   if (isLoading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#5A67D8" />
-        <Text>Loading Mood History...</Text>
-      </View>
+      <SafeAreaView style={styles.centered}>
+        <ActivityIndicator size="large" color="#F2C94C" />
+        <Text style={{ marginTop: 10 }}>Chargement...</Text>
+      </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.centered}>
+      <SafeAreaView style={styles.centered}>
         <Text style={styles.errorText}>{error}</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (moodLogs.length === 0) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.emptyText}>No mood logs found yet. Go to the Mood tab to record one!</Text>
-      </View>
+      <SafeAreaView style={styles.centered}>
+        <Text style={styles.emptyText}>Aucune humeur enregistrée pour le moment.</Text>
+      </SafeAreaView>
     );
   }
 
-  const renderItem = ({ item }) => (
-    <View style={styles.moodItem}>
-      <Text style={styles.moodDate}>{item.date}</Text>
-      <Text style={styles.moodType}>Mood: {item.moodType}</Text>
-      {item.notes && <Text style={styles.moodNotes}>Notes: {item.notes}</Text>}
-    </View>
-  );
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Your Mood History</Text>
+    <SafeAreaView style={styles.container}>
       <FlatList
         data={moodLogs}
-        keyExtractor={(item) => item.id.toString()} // Assuming each mood log has a unique 'id'
+        keyExtractor={(item, index) => index.toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    paddingTop: 20,
+    backgroundColor: '#FFFBEA',
+  },
+  listContent: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  card: {
+    backgroundColor: '#FFF',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#F7E9B8',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  date: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#8B8000',
+    marginBottom: 4,
+  },
+  mood: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 4,
+  },
+  notes: {
+    fontSize: 14,
+    color: '#666',
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  moodItem: {
-    backgroundColor: '#fff',
-    padding: 15,
-    marginVertical: 8,
-    marginHorizontal: 16,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  moodDate: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#5A67D8',
-    marginBottom: 5,
-  },
-  moodType: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 5,
-  },
-  moodNotes: {
-    fontSize: 14,
-    color: '#666',
+    backgroundColor: '#FFFBEA',
+    padding: 20,
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#777',
     textAlign: 'center',
-    paddingHorizontal: 20,
   },
   errorText: {
-    fontSize: 18,
+    fontSize: 16,
     color: 'red',
     textAlign: 'center',
-    paddingHorizontal: 20,
-  },
-  listContent: {
-    paddingBottom: 20, // Add some padding at the bottom of the list
   },
 });
 
