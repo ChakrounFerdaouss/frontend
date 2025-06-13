@@ -6,9 +6,11 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
+import { FontAwesome } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import * as api from '../services/api';
 import MoodCalendar from '../components/MoodCalendar';
@@ -28,7 +30,6 @@ const HistoryScreen = () => {
   const [markedDates, setMarkedDates] = useState({});
   const [selectedDate, setSelectedDate] = useState(null);
 
-  // Convert to local date string: YYYY-MM-DD
   const getLocalDateString = (isoString) => {
     const local = new Date(isoString);
     const year = local.getFullYear();
@@ -39,50 +40,50 @@ const HistoryScreen = () => {
 
   const formatDateTime = (isoDate) => {
     const d = new Date(isoDate);
-    return d.toLocaleDateString('fr-FR', {
+    return d.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-    }) + ' à ' + d.toLocaleTimeString('fr-FR', {
+    }) + ' at ' + d.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
     });
   };
 
+  const fetchMoodLogs = async () => {
+    if (!userToken) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await api.getMoodLogs(userToken);
+      const logs = response.data;
+      setMoodLogs(logs);
+      setError(null);
+
+      const marked = {};
+      logs.forEach((entry) => {
+        const date = getLocalDateString(entry.date);
+        marked[date] = {
+          marked: true,
+          dotColor: moodColors[entry.moodType] || '#000',
+        };
+      });
+
+      setMarkedDates(marked);
+    } catch (err) {
+      console.error('Error fetching mood logs:', err.response?.data || err.message);
+      setError('Failed to load moods.');
+      Alert.alert('Error', 'Unable to load mood history.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useFocusEffect(
     React.useCallback(() => {
-      const fetchMoodLogs = async () => {
-        if (!userToken) {
-          setIsLoading(false);
-          return;
-        }
-
-        try {
-          setIsLoading(true);
-          const response = await api.getMoodLogs(userToken);
-          const logs = response.data;
-          setMoodLogs(logs);
-          setError(null);
-
-          const marked = {};
-          logs.forEach((entry) => {
-            const date = getLocalDateString(entry.date);
-            marked[date] = {
-              marked: true,
-              dotColor: moodColors[entry.moodType] || '#000',
-            };
-          });
-
-          setMarkedDates(marked);
-        } catch (err) {
-          console.error('Error fetching mood logs:', err.response?.data || err.message);
-          setError('Erreur lors du chargement des humeurs.');
-          Alert.alert('Erreur', 'Impossible de charger l’historique.');
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
       fetchMoodLogs();
     }, [userToken])
   );
@@ -105,11 +106,35 @@ const HistoryScreen = () => {
       updatedMarked[newSelectedDate] = {
         ...(updatedMarked[newSelectedDate] || {}),
         selected: true,
-        selectedColor: '#6C63FF',
+        selectedColor: '#a1b3cc',
       };
     }
 
     setMarkedDates(updatedMarked);
+  };
+
+  const handleDeleteMood = (id) => {
+    Alert.alert(
+      'Delete mood entry?',
+      'Are you sure you want to delete this mood?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.deleteMoodLog(userToken, id);
+              setMoodLogs((prev) => prev.filter((mood) => mood._id !== id));
+              Alert.alert('Deleted', 'Mood entry removed.');
+            } catch (error) {
+              console.error('Delete failed:', error);
+              Alert.alert('Error', 'Could not delete the mood.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const filteredLogs = selectedDate
@@ -119,8 +144,8 @@ const HistoryScreen = () => {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.centered}>
-        <ActivityIndicator size="large" color="#F2C94C" />
-        <Text style={{ marginTop: 10 }}>Chargement...</Text>
+        <ActivityIndicator size="large" color="#a1b3cc" />
+        <Text style={{ marginTop: 10 }}>Loading...</Text>
       </SafeAreaView>
     );
   }
@@ -141,16 +166,21 @@ const HistoryScreen = () => {
         {filteredLogs.length === 0 ? (
           <Text style={styles.emptyText}>
             {selectedDate
-              ? "Aucune humeur enregistrée pour ce jour."
-              : "Aucune humeur enregistrée pour le moment."}
+              ? 'No mood logged on this day.'
+              : 'No mood entries yet.'}
           </Text>
         ) : (
-          filteredLogs.map((item, index) => (
-            <View key={index} style={styles.card}>
-              <Text style={styles.date}>{formatDateTime(item.date)}</Text>
-              <Text style={styles.mood}>Humeur : {item.moodType || 'N/A'}</Text>
+          filteredLogs.map((item) => (
+            <View key={item._id} style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.date}>{formatDateTime(item.date)}</Text>
+                <TouchableOpacity onPress={() => handleDeleteMood(item._id)}>
+                  <FontAwesome name="trash" size={18} color="#607389" />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.mood}>Mood: {item.moodType || 'N/A'}</Text>
               <Text style={styles.notes} numberOfLines={1} ellipsizeMode="tail">
-                {item.notes || 'Aucune note'}
+                {item.notes || 'No notes'}
               </Text>
             </View>
           ))
@@ -163,57 +193,62 @@ const HistoryScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFBEA',
+    backgroundColor: '#f5f7fa',
   },
   scrollContent: {
     padding: 16,
     paddingBottom: 40,
   },
   card: {
-    backgroundColor: '#FFF',
+    backgroundColor: '#ffffff',
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#F7E9B8',
+    borderColor: '#dbe2eb',
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 2,
   },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   date: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#8B8000',
-    marginBottom: 4,
+    color: '#3b4857',
   },
   mood: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#333',
-    marginBottom: 4,
+    color: '#607389',
+    marginTop: 6,
   },
   notes: {
     fontSize: 14,
-    color: '#666',
+    color: '#7a8fa7',
+    marginTop: 4,
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFBEA',
+    backgroundColor: '#f5f7fa',
     padding: 20,
   },
   emptyText: {
     fontSize: 16,
-    color: '#777',
+    color: '#7a8fa7',
     textAlign: 'center',
     marginTop: 30,
   },
   errorText: {
     fontSize: 16,
-    color: 'red',
+    color: '#f44336',
     textAlign: 'center',
   },
 });

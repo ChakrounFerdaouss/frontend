@@ -13,7 +13,7 @@ import {
   Keyboard,
   ActivityIndicator,
 } from 'react-native';
-import { useAuth } from '../context/AuthContext'; // 👈 Assure-toi du bon chemin
+import { useAuth } from '../context/AuthContext';
 
 export default function RegisterScreen({ navigation }) {
   const [username, setUsername] = useState('');
@@ -23,20 +23,23 @@ export default function RegisterScreen({ navigation }) {
 
   const handleRegister = async () => {
     if (!username || !password || !confirmPassword) {
-      Alert.alert('Champs manquants', 'Merci de remplir tous les champs.');
+      Alert.alert('Missing Fields', 'Please fill in all fields.');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Erreur', 'Les mots de passe ne correspondent pas.');
+      Alert.alert('Error', 'Passwords do not match.');
       return;
     }
 
     const result = await register(username, password);
     if (!result.success) {
-      Alert.alert('Échec d’inscription', result.message || 'Erreur inconnue.');
+      Alert.alert('Registration Failed', result.message || 'An unknown error occurred.');
+      return;
     }
-    // Redirection automatique se fait via AuthContext (userToken)
+
+    Alert.alert('Success', 'Account created successfully!');
+    navigation.navigate('Login'); // Redirect to login
   };
 
   return (
@@ -46,45 +49,49 @@ export default function RegisterScreen({ navigation }) {
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          <Text style={styles.title}>Créer un compte</Text>
+          <Text style={styles.title}>Create Account</Text>
 
           <TextInput
             style={styles.input}
-            placeholder="Nom d'utilisateur"
+            placeholder="Username"
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
-            placeholderTextColor="#666"
+            placeholderTextColor="#7a8fa7"
           />
 
           <TextInput
             style={styles.input}
-            placeholder="Mot de passe"
+            placeholder="Password"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
-            placeholderTextColor="#666"
+            placeholderTextColor="#7a8fa7"
           />
 
           <TextInput
             style={styles.input}
-            placeholder="Confirmer le mot de passe"
+            placeholder="Confirm Password"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry
-            placeholderTextColor="#666"
+            placeholderTextColor="#7a8fa7"
           />
 
-          <TouchableOpacity style={styles.registerButton} onPress={handleRegister} disabled={isLoading}>
+          <TouchableOpacity
+            style={styles.registerButton}
+            onPress={handleRegister}
+            disabled={isLoading}
+          >
             {isLoading ? (
-              <ActivityIndicator color="#333" />
+              <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.registerText}>S'inscrire</Text>
+              <Text style={styles.registerText}>Register</Text>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.loginLink}>Déjà un compte ? Se connecter</Text>
+            <Text style={styles.loginLink}>Already have an account? Log in</Text>
           </TouchableOpacity>
         </ScrollView>
       </TouchableWithoutFeedback>
@@ -95,7 +102,7 @@ export default function RegisterScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: '#FFFBEA',
+    backgroundColor: '#f5f7fa',
     justifyContent: 'center',
     padding: 20,
   },
@@ -104,32 +111,33 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 30,
     textAlign: 'center',
-    color: '#FFCC00',
+    color: '#3b4857',
   },
   input: {
-    backgroundColor: '#FFF',
+    backgroundColor: '#e8eef5',
     borderRadius: 10,
     padding: 15,
     fontSize: 16,
     marginBottom: 15,
-    borderColor: '#EEE',
+    borderColor: '#dbe2eb',
     borderWidth: 1,
+    color: '#3b4857',
   },
   registerButton: {
-    backgroundColor: '#FFD700',
+    backgroundColor: '#607389',
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 10,
   },
   registerText: {
-    color: '#333',
+    color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
   },
   loginLink: {
     textAlign: 'center',
-    color: '#1976D2',
+    color: '#7a8fa7',
     marginTop: 15,
     fontSize: 14,
   },

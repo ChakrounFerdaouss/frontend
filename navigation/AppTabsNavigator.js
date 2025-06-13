@@ -2,9 +2,9 @@
 
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { FontAwesome5 } from '@expo/vector-icons'; // ✅ Icônes
+import { FontAwesome5 } from '@expo/vector-icons';
 
-// Écrans
+// Screens
 import HomeScreen from '../screens/HomeScreen';
 import MoodLogScreen from '../screens/MoodLogScreen';
 import HistoryScreen from '../screens/HistoryScreen';
@@ -16,12 +16,13 @@ const AppTabsNavigator = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: '#C9A602', // Couleur de l’onglet actif (jaune or)
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: '#607389',     // Active tab color
+        tabBarInactiveTintColor: '#a1b3cc',   // Inactive tab color
         tabBarStyle: {
-          backgroundColor: '#fff',
+          backgroundColor: '#f5f7fa',         // Tab bar background
           paddingBottom: 5,
           paddingTop: 5,
+          borderTopColor: '#c1ccd9',
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -29,7 +30,6 @@ const AppTabsNavigator = () => {
         tabBarIcon: ({ color, size }) => {
           let iconName;
 
-          // Sélection d’icône selon le nom de l’onglet
           if (route.name === 'Home') iconName = 'home';
           else if (route.name === 'Mood') iconName = 'smile';
           else if (route.name === 'History') iconName = 'history';

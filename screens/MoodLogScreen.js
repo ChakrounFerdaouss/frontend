@@ -29,25 +29,25 @@ const MoodLogScreen = () => {
 
   const handleSaveMood = async () => {
     if (!selectedMood) {
-      Alert.alert('Sélectionnez une humeur.');
+      Alert.alert('Please select a mood');
       return;
     }
 
     setIsLoading(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const now = new Date();
       const moodData = {
         moodType: selectedMood.type,
         notes,
-        date: today,
+        date: now.toISOString(),
       };
 
       await api.createMoodLog(userToken, moodData);
-      Alert.alert('✅ Enregistré', `Humeur : ${selectedMood.type}`);
+      Alert.alert('✅ Saved', `Mood: ${selectedMood.type}`);
       setSelectedMood(null);
       setNotes('');
     } catch (error) {
-      Alert.alert('Erreur', 'Échec de l’enregistrement.');
+      Alert.alert('Error', 'Could not save mood entry.');
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -56,7 +56,7 @@ const MoodLogScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>New Journal Entry</Text>
+      <Text style={styles.title}>New Mood Entry</Text>
 
       <View style={styles.moodRow}>
         {moods.map((mood) => (
@@ -74,8 +74,8 @@ const MoodLogScreen = () => {
       </View>
 
       <TextInput
-        placeholder="Notes (Optional)"
-        placeholderTextColor="#999"
+        placeholder="Notes (optional)"
+        placeholderTextColor="#607389"
         multiline
         numberOfLines={4}
         value={notes}
@@ -91,8 +91,14 @@ const MoodLogScreen = () => {
         ))}
       </View>
 
-      <TouchableOpacity style={styles.saveButton} onPress={handleSaveMood} disabled={isLoading}>
-        <Text style={styles.saveButtonText}>{isLoading ? 'Saving...' : 'Save'}</Text>
+      <TouchableOpacity
+        style={styles.saveButton}
+        onPress={handleSaveMood}
+        disabled={isLoading}
+      >
+        <Text style={styles.saveButtonText}>
+          {isLoading ? 'Saving...' : 'Save'}
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -102,7 +108,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
-    backgroundColor: '#fffbea',
+    backgroundColor: '#f5f7fa',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -110,7 +116,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '600',
     marginBottom: 25,
-    color: '#333',
+    color: '#3b4857',
   },
   moodRow: {
     flexDirection: 'row',
@@ -119,59 +125,59 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   moodCircle: {
-    backgroundColor: '#fff',
+    backgroundColor: '#e8eef5',
     borderRadius: 40,
     padding: 15,
     borderWidth: 2,
-    borderColor: '#eee',
+    borderColor: '#c1ccd9',
     width: 60,
     height: 60,
     justifyContent: 'center',
     alignItems: 'center',
   },
   moodCircleSelected: {
-    borderColor: '#ffcc00',
-    backgroundColor: '#fffde7',
+    borderColor: '#a1b3cc',
+    backgroundColor: '#fff',
   },
   moodLabel: {
     fontSize: 24,
   },
   textArea: {
-    backgroundColor: '#fff',
+    backgroundColor: '#e8eef5',
     borderRadius: 10,
     padding: 15,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#c1ccd9',
     textAlignVertical: 'top',
     fontSize: 16,
     width: '100%',
     marginBottom: 20,
+    color: '#3b4857',
   },
   tagContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     flexWrap: 'wrap',
-    gap: 10,
     marginBottom: 20,
   },
   tag: {
-    backgroundColor: '#ffecb3',
+    backgroundColor: '#7a8fa7',
     paddingVertical: 5,
     paddingHorizontal: 12,
     borderRadius: 20,
     fontSize: 14,
-    color: '#333',
+    color: '#f5f7fa',
     margin: 5,
   },
   saveButton: {
-    backgroundColor: '#fbc02d',
+    backgroundColor: '#607389',
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: 'center',
     width: '100%',
   },
   saveButtonText: {
-    color: '#333',
+    color: '#f5f7fa',
     fontSize: 16,
     fontWeight: 'bold',
   },
