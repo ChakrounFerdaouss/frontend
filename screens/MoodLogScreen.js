@@ -3,8 +3,8 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   TextInput,
+  TouchableOpacity,
   Alert,
   ScrollView,
 } from 'react-native';
@@ -49,6 +49,7 @@ const MoodLogScreen = () => {
     } catch (error) {
       Alert.alert('Error', 'Could not save mood entry.');
       console.error(error);
+      Alert.alert('Error', 'Could not save mood entry.');
     } finally {
       setIsLoading(false);
     }
@@ -184,3 +185,4 @@ const styles = StyleSheet.create({
 });
 
 export default MoodLogScreen;
+

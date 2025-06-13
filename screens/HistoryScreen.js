@@ -20,6 +20,8 @@ const moodColors = {
   Neutral: '#ff9800',
   Happy: '#4caf50',
   Joyful: '#2196f3',
+  'Very Sad': '#d32f2f',
+  'Very Happy': '#2196f3',
 };
 
 const HistoryScreen = () => {
@@ -93,18 +95,17 @@ const HistoryScreen = () => {
     const newSelectedDate = isSameDay ? null : day.dateString;
     setSelectedDate(newSelectedDate);
 
-    const updatedMarked = {};
-    moodLogs.forEach((entry) => {
-      const date = getLocalDateString(entry.date);
-      updatedMarked[date] = {
-        marked: true,
-        dotColor: moodColors[entry.moodType] || '#000',
+    const updatedMarked = { ...markedDates };
+    Object.keys(updatedMarked).forEach((key) => {
+      updatedMarked[key] = {
+        ...updatedMarked[key],
+        selected: false,
       };
     });
 
-    if (newSelectedDate) {
+    if (newSelectedDate && updatedMarked[newSelectedDate]) {
       updatedMarked[newSelectedDate] = {
-        ...(updatedMarked[newSelectedDate] || {}),
+        ...updatedMarked[newSelectedDate],
         selected: true,
         selectedColor: '#a1b3cc',
       };
@@ -138,8 +139,10 @@ const HistoryScreen = () => {
   };
 
   const filteredLogs = selectedDate
-    ? moodLogs.filter((log) => getLocalDateString(log.date) === selectedDate)
-    : moodLogs;
+    ? moodLogs
+        .filter((log) => getLocalDateString(log.date) === selectedDate)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+    : moodLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
 
   if (isLoading) {
     return (
@@ -162,7 +165,6 @@ const HistoryScreen = () => {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <MoodCalendar markedDates={markedDates} onDayPress={handleDayPress} />
-
         {filteredLogs.length === 0 ? (
           <Text style={styles.emptyText}>
             {selectedDate
