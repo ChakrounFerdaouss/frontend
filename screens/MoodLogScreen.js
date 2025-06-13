@@ -35,11 +35,10 @@ const MoodLogScreen = () => {
 
     setIsLoading(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
       const moodData = {
         moodType: selectedMood.type,
         notes,
-        date: today,
+        date: new Date().toISOString(), // 👈 horodatage complet pour éviter les doublons
       };
 
       await api.createMoodLog(userToken, moodData);
@@ -56,7 +55,7 @@ const MoodLogScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>New Journal Entry</Text>
+      <Text style={styles.title}>Nouvelle humeur</Text>
 
       <View style={styles.moodRow}>
         {moods.map((mood) => (
@@ -74,7 +73,7 @@ const MoodLogScreen = () => {
       </View>
 
       <TextInput
-        placeholder="Notes (Optional)"
+        placeholder="Notes (optionnel)"
         placeholderTextColor="#999"
         multiline
         numberOfLines={4}
@@ -92,7 +91,7 @@ const MoodLogScreen = () => {
       </View>
 
       <TouchableOpacity style={styles.saveButton} onPress={handleSaveMood} disabled={isLoading}>
-        <Text style={styles.saveButtonText}>{isLoading ? 'Saving...' : 'Save'}</Text>
+        <Text style={styles.saveButtonText}>{isLoading ? 'Enregistrement...' : 'Enregistrer'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );

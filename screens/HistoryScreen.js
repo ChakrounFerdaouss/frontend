@@ -28,7 +28,6 @@ const HistoryScreen = () => {
   const [markedDates, setMarkedDates] = useState({});
   const [selectedDate, setSelectedDate] = useState(null);
 
-  // Convert to local date string: YYYY-MM-DD
   const getLocalDateString = (isoString) => {
     const local = new Date(isoString);
     const year = local.getFullYear();
@@ -67,10 +66,16 @@ const HistoryScreen = () => {
           const marked = {};
           logs.forEach((entry) => {
             const date = getLocalDateString(entry.date);
-            marked[date] = {
-              marked: true,
-              dotColor: moodColors[entry.moodType] || '#000',
-            };
+            const color = moodColors[entry.moodType] || '#000';
+
+            if (!marked[date]) {
+              marked[date] = { dots: [{ color }], marked: true };
+            } else {
+              const existingColors = marked[date].dots.map((dot) => dot.color);
+              if (!existingColors.includes(color)) {
+                marked[date].dots.push({ color });
+              }
+            }
           });
 
           setMarkedDates(marked);
@@ -92,20 +97,19 @@ const HistoryScreen = () => {
     const newSelectedDate = isSameDay ? null : day.dateString;
     setSelectedDate(newSelectedDate);
 
-    const updatedMarked = {};
-    moodLogs.forEach((entry) => {
-      const date = getLocalDateString(entry.date);
-      updatedMarked[date] = {
-        marked: true,
-        dotColor: moodColors[entry.moodType] || '#000',
+    const updatedMarked = { ...markedDates };
+    Object.keys(updatedMarked).forEach((key) => {
+      updatedMarked[key] = {
+        ...updatedMarked[key],
+        selected: false,
       };
     });
 
-    if (newSelectedDate) {
+    if (newSelectedDate && updatedMarked[newSelectedDate]) {
       updatedMarked[newSelectedDate] = {
-        ...(updatedMarked[newSelectedDate] || {}),
+        ...updatedMarked[newSelectedDate],
         selected: true,
-        selectedColor: '#6C63FF',
+        selectedColor: '#F2C94C',
       };
     }
 
@@ -113,8 +117,10 @@ const HistoryScreen = () => {
   };
 
   const filteredLogs = selectedDate
-    ? moodLogs.filter((log) => getLocalDateString(log.date) === selectedDate)
-    : moodLogs;
+    ? moodLogs
+        .filter((log) => getLocalDateString(log.date) === selectedDate)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+    : moodLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
 
   if (isLoading) {
     return (
@@ -137,7 +143,6 @@ const HistoryScreen = () => {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <MoodCalendar markedDates={markedDates} onDayPress={handleDayPress} />
-
         {filteredLogs.length === 0 ? (
           <Text style={styles.emptyText}>
             {selectedDate
@@ -149,7 +154,7 @@ const HistoryScreen = () => {
             <View key={index} style={styles.card}>
               <Text style={styles.date}>{formatDateTime(item.date)}</Text>
               <Text style={styles.mood}>Humeur : {item.moodType || 'N/A'}</Text>
-              <Text style={styles.notes} numberOfLines={1} ellipsizeMode="tail">
+              <Text style={styles.notes} numberOfLines={3} ellipsizeMode="tail">
                 {item.notes || 'Aucune note'}
               </Text>
             </View>
