@@ -11,31 +11,6 @@ export const register = async (username, password) => {
   return axios.post(`${API_BASE_URL}/auth/register`, { username, password });
 };
 
-// 📓 Journal Entries
-export const getJournals = async (token) => {
-  return axios.get(`${API_BASE_URL}/journals`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-};
-
-export const createJournal = async (token, journalData) => {
-  return axios.post(`${API_BASE_URL}/journals`, journalData, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-};
-
-export const updateJournal = async (token, journalId, journalData) => {
-  return axios.put(`${API_BASE_URL}/journals/${journalId}`, journalData, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-};
-
-export const deleteJournal = async (token, journalId) => {
-  return axios.delete(`${API_BASE_URL}/journals/${journalId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-};
-
 // 😄 Mood Logs
 export const getMoodLogs = async (token, date) => {
   return axios.get(`${API_BASE_URL}/moods`, {
